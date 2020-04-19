@@ -1,4 +1,5 @@
-﻿﻿using System.Threading.Tasks;
+﻿﻿using System.Collections.Generic;
+ using System.Threading.Tasks;
  using MailingGeneratorDomain.Models;
  using MailingGeneratorDomain.RequestObjects;
  using MailingsGeneratorDomain.Models;
@@ -15,5 +16,7 @@
         Task               DeleteAsync(int id);
         
         Task<bool>         ExistAsync(int id);
+
+        Task<List<ControlEvent>> GetControlEventsAsyncById(List<int> idList);
     }
 }
