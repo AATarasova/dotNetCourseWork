@@ -4,7 +4,6 @@ using MailingGeneratorDomain.Models;
 using MailingGeneratorDomain.Repositories;
 using MailingGeneratorDomain.RequestObjects;
 using MailingGeneratorDomain.Services;
-using MailingsGeneratorBll.Services;
 
 namespace MailingGeneratorBll.Services
 {
@@ -22,10 +21,11 @@ namespace MailingGeneratorBll.Services
             {
                 throw new ExceptionTypes.IncorrectNameException();
             }
+            
+            MailingService.CheckDate(controlEvent.Date);
             return await _repository.CreateControlEventAsync(controlEvent);
         }
-
-        // Получение контрольного метроприятия по его id:
+        
         public async Task<ControlEvent> GetControlEventAsync(int id)
         {
             if (id < 1)
@@ -41,15 +41,15 @@ namespace MailingGeneratorBll.Services
         }
 
         public async Task UpdateControlEventAsync(UpdateControlEventModel updateModel)
-        {
+        { 
+            if (updateModel == null || updateModel.IsEmpty())
+            {
+                throw new ExceptionTypes.NullValueException();
+            }
+            
             if (updateModel.Id < 1)
             {
                 throw new ExceptionTypes.IncorrectIdException();
-            }
-            
-            if (updateModel.IsEmpty())
-            {
-                throw new ExceptionTypes.NullValueException();
             }
             
             if (!await _repository.ExistAsync(updateModel.Id))
@@ -57,7 +57,7 @@ namespace MailingGeneratorBll.Services
                 throw new ExceptionTypes.IdNotFoundException();
             }
 
-            if (updateModel.MaxMark > 10)
+            if (updateModel.MaxMark > 10 || updateModel.MaxMark < 0)
             {
                 throw new ExceptionTypes.IncorrectMarkException();
             }
@@ -74,8 +74,7 @@ namespace MailingGeneratorBll.Services
             {
                 throw new ExceptionTypes.IncorrectIdException();
             }
-            var controlEvent = _repository.GetControlEventAsync(id);
-            if (controlEvent == null)
+            if (!await _repository.ExistAsync(id))
             {
                 throw new ExceptionTypes.ControlEventNotExistException();
             }
