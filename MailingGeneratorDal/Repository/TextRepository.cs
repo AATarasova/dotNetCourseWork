@@ -32,12 +32,7 @@ namespace MailingGeneratorDal.Repository
             return await _dbContext.Texts.FirstOrDefaultAsync(t => t.TextId == id);
         }
 
-        public async Task<List<Text>> GetTextAsync(List<int> idList)
-        {
-            var allTexts = _dbContext.Texts.Where(t => idList.Contains(t.TextId)).ToList();
-            return allTexts;
-        }
-        
+
         public async Task DeleteTextAsync(int id)
         {
             _dbContext.Remove(_dbContext.Texts.FirstOrDefaultAsync(t => t.TextId == id));
@@ -65,6 +60,11 @@ namespace MailingGeneratorDal.Repository
         {
             var text = await _dbContext.Texts.FirstOrDefaultAsync(t => t.TextId == id);
             return text != null;
+        }
+
+        public async Task<List<Text>> GetTextsAsyncById(List<int> idList)
+        {
+            return await  _dbContext.Texts.Where(t => idList.Contains(t.TextId)).ToListAsync();
         }
     }
 }
