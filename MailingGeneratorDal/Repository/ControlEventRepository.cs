@@ -1,4 +1,5 @@
-﻿﻿using System.Linq;
+﻿﻿using System.Collections.Generic;
+ using System.Linq;
  using System.Threading.Tasks;
  using Mailing.MailingDal;
  using MailingGeneratorDomain.Models;
@@ -24,6 +25,11 @@
         public async Task<ControlEvent> GetControlEventAsync(int id)
         {
             return await _dbContext.ControlEvents.FirstOrDefaultAsync(ce => ce.MailId == id);
+        }
+        
+        public async Task<List<ControlEvent>> GetControlEventsAsyncById(List<int> id)
+        {
+            return await _dbContext.ControlEvents.Where(ce => id.Contains(ce.ControlEventId)).ToListAsync();
         }
 
         public async Task UpdateAsync(UpdateControlEventModel updateModel)
