@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using MailingGeneratorDomain.Models;
 using MailingGeneratorDomain.RequestObjects;
 
@@ -15,6 +16,8 @@ namespace MailingGeneratorDomain.Repositories
         Task UpdateAsync(UpdateTextModel updateModel);
 
         Task<bool> ExistAsync(int id);
+
+        Task<List<Text>> GetTextsAsyncById(List<int> idList);
 
     }
 }
