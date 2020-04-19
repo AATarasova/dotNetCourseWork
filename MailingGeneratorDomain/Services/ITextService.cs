@@ -1,16 +1,18 @@
-﻿using MailingGeneratorDomain.Models;
+﻿using System.Threading.Tasks;
+using MailingGeneratorDomain.Models;
+using MailingGeneratorDomain.RequestObjects;
 
 namespace MailingGeneratorDomain.Services
 {
     public interface ITextService
     {
-        Text CreateText(Text text);
+        Task<Text> CreateTextAsync(Text text);
 
-        Text GetText(int id);
+        Task<Text> GetTextAsync(int id);
         
         
-        void DeleteText(int id);
+        Task       DeleteTextAsync(int id);
 
-        void Update(int id, string information);
+        Task       UpdateAsync(UpdateTextModel updateModel);
     }
 }

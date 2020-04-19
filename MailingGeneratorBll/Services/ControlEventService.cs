@@ -1,104 +1,91 @@
-﻿﻿using MailingGeneratorDomain.Models;
- using MailingGeneratorDomain.Repositories;
- using MailingGeneratorDomain.RequestObjects;
- using MailingsGeneratorBll.Addition;
-using MailingsGeneratorDomain.Models;
- using MailingsGeneratorDomain.Services;
+﻿using System.Threading.Tasks;
+using MailingGeneratorBll.Addition;
+using MailingGeneratorDomain.Models;
+using MailingGeneratorDomain.Repositories;
+using MailingGeneratorDomain.RequestObjects;
+using MailingGeneratorDomain.Services;
+using MailingsGeneratorBll.Services;
 
-namespace MailingsGeneratorBll.Services
+namespace MailingGeneratorBll.Services
 {
     public class ControlEventService : IControlEventService
     {
         private IControlEventRepository _repository;
-        public ControlEvent CreateControlEvent(ControlEvent controlEvent)
+        public async Task<ControlEvent> CreateControlEventAsync(ControlEvent controlEvent)
         {
             if (controlEvent == null)
             {
-                throw new ErrorTypes.NullValue();
+                throw new ExceptionTypes.NullValueException();
             }
 
             if (controlEvent.Name == null)
             {
-                throw new ErrorTypes.IncorrectName();
+                throw new ExceptionTypes.IncorrectNameException();
             }
-            return _repository.CreateControlEvent(controlEvent);
+            return await _repository.CreateControlEventAsync(controlEvent);
         }
 
         // Получение контрольного метроприятия по его id:
-        public ControlEvent GetControlEvent(int id)
+        public async Task<ControlEvent> GetControlEventAsync(int id)
         {
-            Helpful.CheckId(id);
-            var controlEvent = _repository.GetControlEvent(id);
+            if (id < 1)
+            {
+                throw new ExceptionTypes.IncorrectIdException();
+            }
+            var controlEvent = await _repository.GetControlEventAsync(id);
             if (controlEvent == null)
             {
-                throw new ErrorTypes.ControlEventNotExist();
+                throw new ExceptionTypes.ControlEventNotExistException();
             }
             return controlEvent;
         }
 
-        public void UpdateControlEvent(UpdateControlEventObject update)
+        public async Task UpdateControlEventAsync(UpdateControlEventModel updateModel)
         {
-            Helpful.CheckId(update.Id);
-            
-            if (update.IsEmpty())
+            if (updateModel.Id < 1)
             {
-                throw new ErrorTypes.NullValue();
+                throw new ExceptionTypes.IncorrectIdException();
             }
             
-            var controlEvent = _repository.GetControlEvent(update.Id);
-            if (controlEvent == null)
+            if (updateModel.IsEmpty())
             {
-                throw new ErrorTypes.IdNotFound();
+                throw new ExceptionTypes.NullValueException();
+            }
+            
+            if (!await _repository.ExistAsync(updateModel.Id))
+            {
+                throw new ExceptionTypes.IdNotFoundException();
             }
 
-            if (update.MaxMark > 0)
+            if (updateModel.MaxMark > 10)
             {
-                controlEvent.MaxMark = update.MaxMark.Value;
+                throw new ExceptionTypes.IncorrectMarkException();
             }
 
-            if (update.Date != null)
-            {
-                controlEvent.Date = update.Date;
-            }
+            MailingService.CheckDate(updateModel.Date);
             
-            _repository.Update(controlEvent);
+            
+            await _repository.UpdateAsync(updateModel);
         }
 
-        public void Delete(int id)
+        public async Task DeleteAsync(int id)
         {
-            Helpful.CheckId(id);
-            
-            var controlEvent = _repository.GetControlEvent(id);
+            if (id < 1)
+            {
+                throw new ExceptionTypes.IncorrectIdException();
+            }
+            var controlEvent = _repository.GetControlEventAsync(id);
             if (controlEvent == null)
             {
-                throw new ErrorTypes.ControlEventNotExist();
+                throw new ExceptionTypes.ControlEventNotExistException();
             }
             
-            _repository.Delete(controlEvent);
+            await _repository.DeleteAsync(id);
         }
 
         public ControlEventService(IControlEventRepository repository)
         {
             _repository = repository;
-        }
-
-
-        // Вспомогательные
-        private void UpdateDate(ControlEvent controlEvent, string date)
-        {
-            Helpful.CheckDate(date);
-            controlEvent.Date = date;
-            _repository.Update(controlEvent);
-        }
-
-        private void UpdateMaxMark(ControlEvent controlEvent, int maxMark)
-        {
-            if (maxMark < 0)
-            {
-                throw new ErrorTypes.IncorrectMark();
-            } 
-            
-            _repository.Update(controlEvent);
         }
     }
 }

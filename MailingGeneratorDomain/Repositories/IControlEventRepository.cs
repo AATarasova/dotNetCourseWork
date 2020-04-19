@@ -1,15 +1,19 @@
-﻿﻿using MailingGeneratorDomain.Models;
+﻿﻿using System.Threading.Tasks;
+ using MailingGeneratorDomain.Models;
+ using MailingGeneratorDomain.RequestObjects;
  using MailingsGeneratorDomain.Models;
 
  namespace MailingGeneratorDomain.Repositories
 {
     public interface IControlEventRepository
     {
-        ControlEvent CreateControlEvent(ControlEvent controlEvent);
-        ControlEvent GetControlEvent (int id);
+        Task<ControlEvent> CreateControlEventAsync(ControlEvent controlEvent);
+        Task<ControlEvent> GetControlEventAsync(int id);
 
-        void Update(ControlEvent controlEvent);
+        Task               UpdateAsync(UpdateControlEventModel updateModel);
 
-        void Delete(ControlEvent controlEvent);
+        Task               DeleteAsync(int id);
+        
+        Task<bool>         ExistAsync(int id);
     }
 }

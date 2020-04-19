@@ -1,12 +1,14 @@
-﻿﻿using System.Collections.Generic;
+﻿﻿using System;
+ using System.Collections.Generic;
+ using System.Threading.Tasks;
+ using MailingGeneratorBll.Addition;
  using MailingGeneratorDomain.Models;
  using MailingGeneratorDomain.Repositories;
  using MailingGeneratorDomain.RequestObjects;
- using MailingsGeneratorBll.Addition;
-using MailingsGeneratorDomain.Models;
- using MailingsGeneratorDomain.Services;
+ using MailingGeneratorDomain.Services;
 
-namespace MailingsGeneratorBll.Services
+
+ namespace MailingsGeneratorBll.Services
 {
     public class MailingService : IMailingService
     {
@@ -15,28 +17,29 @@ namespace MailingsGeneratorBll.Services
         private ITextRepository _textRepository;
 
         // Создание рассылки
-        public MailingsGeneratorDomain.Models.Mailing CreateMailing(MailingsGeneratorDomain.Models.Mailing mail)
+        public async Task<MailingsGeneratorDomain.Models.Mailing> CreateMailingAsync(
+            MailingsGeneratorDomain.Models.Mailing mail)
         {
             if (mail == null)
             {
-                throw new ErrorTypes.NullValue();
+                throw new ExceptionTypes.NullValueException();
             }
             if (mail.CourseName == null)
             {
-                throw new ErrorTypes.IncorrectName();
+                throw new ExceptionTypes.IncorrectNameException();
             }
 
-            Helpful.CheckDate(mail.StartDate);
+            CheckDate(mail.StartDate);
 
             if (mail.WorksId != null)
             {
                 mail.Works = new List<ControlEvent>();
                 foreach (var workId in mail.WorksId)
                 {
-                    var work = _eventRepository.GetControlEvent(workId);
+                    var work = await _eventRepository.GetControlEventAsync(workId);
                     if (work == null)
                     {
-                        throw new ErrorTypes.ControlEventNotExist();
+                        throw new ExceptionTypes.ControlEventNotExistException();
                     }
                     mail.Works.Add(work);
                 }
@@ -44,10 +47,10 @@ namespace MailingsGeneratorBll.Services
 
             if (mail.FinishWorkId != 0)
             {
-                var finishWork = _eventRepository.GetControlEvent(mail.FinishWorkId);
+                var finishWork = await _eventRepository.GetControlEventAsync(mail.FinishWorkId);
                 if (finishWork == null)
                 {
-                    throw new ErrorTypes.ControlEventNotExist();
+                    throw new ExceptionTypes.ControlEventNotExistException();
                 }
                 mail.FinishWork = finishWork;
             }
@@ -56,160 +59,92 @@ namespace MailingsGeneratorBll.Services
             {
                 foreach (var textId in mail.TextId)
                 {
-                    var text = _textRepository.GetText(textId);
+                    var text = await _textRepository.GetTextAsync(textId);
                     if (text == null)
                     {
-                        throw new ErrorTypes.TextNotExist();
+                        throw new ExceptionTypes.TextNotExistException();
                     }
                     mail.MailText.Add(text);
                 }
             }
-            return _repository.CreateMailing(mail);
-        }
-        
-        // Имя курса по id его рассылки:
-        public string GetCourseName(int id)
-        {
-            Helpful.CheckId(id);
-            var mailing = _repository.GetCourse(id);
-            if (mailing == null)
-            {
-                throw new ErrorTypes.MailingNotExist();
-            }
-
-            return mailing.CourseName;
+            return await _repository.CreateMailingAsync(mail);
         }
 
-        // id рассылки по имени ее курса:
-        public int GetCourseId(string name)
-        {
-            if (name == null)
+
+
+        public async Task<MailingsGeneratorDomain.Models.Mailing> GetCourseAsync(int id)
+                 {
+            if (id < 1)
             {
-                throw new ErrorTypes.IncorrectName();
+                throw new ExceptionTypes.IncorrectIdException();
             }
-            var mailing = _repository.GetCourse(name);
+            var mailing = await  _repository.GetCourseAsync(id);
             if (mailing == null)
             {
-                throw new ErrorTypes.MailingNotExist();
-            }
-
-            return mailing.MailingId;
-        }
-
-        public MailingsGeneratorDomain.Models.Mailing GetCourse(int id)
-        {
-            Helpful.CheckId(id);
-            var mailing = _repository.GetCourse(id);
-            if (mailing == null)
-            {
-                throw new ErrorTypes.MailingNotExist();
+                throw new ExceptionTypes.MailingNotExistException();
             }
             return mailing;
         }
         
-        public MailingsGeneratorDomain.Models.Mailing GetCourse(string name) 
-        {                      
-            if (name == null)
-            {
-                throw new ErrorTypes.IncorrectName();
-            }  
-            var mailing = _repository.GetCourse(name);
-            if (mailing == null)
-            {
-                throw new ErrorTypes.MailingNotExist();
-            }
-            return mailing;
-        }
 
-        public void AddWork(int courseId, int workId, bool isFinish)
+        public async Task UpdateAsync(UpdateMailingModel updateModel)
         {
-            Helpful.CheckId(courseId);
-            Helpful.CheckId(workId);
-            
-            var mailing = _repository.GetCourse(courseId);
-            if (mailing == null)
+            if (updateModel == null)
             {
-                throw new ErrorTypes.MailingNotExist();
+                throw new ExceptionTypes.NullValueException();
             }
-
-            if (mailing.Works == null)
+            if ((updateModel.FinishId.HasValue && updateModel.FinishId.Value < 1) 
+                || updateModel.MailingId < 1)
             {
-                mailing.Works = new List<ControlEvent>();
-            }
-
-            var controlEvent = _eventRepository.GetControlEvent(workId);
-            if (controlEvent == null)
-            {
-                throw new ErrorTypes.ControlEventNotExist();
+                throw new ExceptionTypes.IncorrectIdException();
             }
 
             
-            if ((isFinish && mailing.FinishWork != null)  || (!isFinish && mailing.Works.Contains(controlEvent)))
+            if (!await _repository.ExistAsync(updateModel.MailingId))
             {
-                
-                throw new ErrorTypes.AlreadyContains();
+                throw new ExceptionTypes.MailingNotExistException();
             }
 
-            if (isFinish)
-            {
-                mailing.FinishWork = controlEvent;
-            }
-            else
-            {
-                mailing.Works.Add(controlEvent);
-            }
-            _repository.Update(mailing);
-        }
 
-        public List<ControlEvent> GetControlEvents(int id)
-        {
-            Helpful.CheckId(id);
+            if (updateModel.TextId != null)
+            {
+                GetElement<Text> getText = _textRepository.GetTextAsync;
+                await AddElement(updateModel.MailText, updateModel.TextId, getText);
+            }
             
-            var mailing = _repository.GetCourse(id);
-            if (mailing == null)
+            if (updateModel.WorksId != null)
             {
-                throw new ErrorTypes.MailingNotExist();
+                GetElement<ControlEvent> getText = _eventRepository.GetControlEventAsync;
+                await AddElement(updateModel.Works, updateModel.WorksId, getText);
             }
-
-            return mailing.Works;
-        }
-
-        public ControlEvent GetFinishEvent(int id)
-        {
-            Helpful.CheckId(id);
             
-            var mailing = _repository.GetCourse(id);
-            if (mailing == null)
-            {
-                throw new ErrorTypes.MailingNotExist();
-            }
-
-            return mailing.FinishWork;
-        }
-
-        public void DeleteMailing(int id)
-        {
-            Helpful.CheckId(id);
             
-            var mailing = _repository.GetCourse(id);
-            if (mailing == null)
-            {
-                throw new ErrorTypes.MailingNotExist();
-            }
-            _repository.DeleteMailing(mailing);
+            await _repository.UpdateAsync(updateModel);
         }
 
-        public MailingsGeneratorDomain.Models.Mailing GetCourse(GetMailingObject getMailingObject)
+        public async Task DeleteMailingAsync(int id)
         {
-            GetMailingObject.TypeOfGetParameter type;
-            if (getMailingObject == null || 
-                (type = getMailingObject.TypeOfRequest()) == GetMailingObject.TypeOfGetParameter.NoParameter)
+            if (id < 1)
             {
-                throw new ErrorTypes.NullValue();
+                throw new ExceptionTypes.IncorrectIdException();
             }
+            
+          
+            if (!await _repository.ExistAsync(id))
+            {
+                throw new ExceptionTypes.MailingNotExistException();
+            }
+            await _repository.DeleteMailingAsync(id);
+        }
 
-            return type == GetMailingObject.TypeOfGetParameter.Id ?
-                GetCourse(getMailingObject.Id.Value) : GetCourse(getMailingObject.Name);
+        public async Task<MailingsGeneratorDomain.Models.Mailing> GetCourseAsync(GetMailingModel getMailingModel)
+        {
+            if (getMailingModel == null || getMailingModel.IsEmpty())
+            {
+                throw new ExceptionTypes.NullValueException();
+            }
+          
+            return await _repository.GetCourseAsync(getMailingModel);
 
         }
 
@@ -221,6 +156,46 @@ namespace MailingsGeneratorBll.Services
             _eventRepository = eventRepository;
             _textRepository  = textRepository;
         }
+
         
+        private async Task AddElement<T>(ICollection<T> list, 
+            IReadOnlyCollection<int> idList, GetElement<T> getControlEvent)
+        {
+            if (idList != null)
+            {
+                foreach (var id in idList)
+                {
+                    var controlEvent = await getControlEvent(id);
+                    if (controlEvent == null)
+                    {
+                        throw new ExceptionTypes.TextNotExistException();
+                    }
+                    list.Add(controlEvent);
+                }
+            }
+        }
+
+        private delegate Task<T> GetElement<T> (int id);
+
+        public static void CheckDate(string date)
+        {
+            bool isCorrect;
+            if (date == null)
+            {
+                isCorrect = false;
+            }
+            else
+            {
+                var parts = date.Split('.');
+                int day;
+                int month;
+                isCorrect = parts.Length == 2 && int.TryParse(parts[0], out day) && int.TryParse(parts[1], out month)
+                            && day <= 31 && day >= 1 && month <= 12 && month >= 1;
+            }
+            if (!isCorrect)
+            {
+                throw new ExceptionTypes.IncorrectDateException();
+            }
+        }
     }
 }

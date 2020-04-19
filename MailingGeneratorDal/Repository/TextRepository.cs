@@ -1,42 +1,70 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Mailing.MailingDal;
 using MailingGeneratorDomain.Models;
 using MailingGeneratorDomain.Repositories;
+using MailingGeneratorDomain.RequestObjects;
 using MailingsGeneratorDomain.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace MailingGeneratorDal.Repository
 {
     public class TextRepository : ITextRepository
     {
         private MailingDbContext _dbContext;
-        
-        public Text CreateText (Text text)
-        {
-            _dbContext.Add(text); // на запись в базу
-            _dbContext.SaveChanges();
-
-            return text;
-        }
-
-        public Text GetText(int id)
-        {
-            return _dbContext.Texts.AsEnumerable().FirstOrDefault(t => t.TextId == id);
-        }
-
         public TextRepository (MailingDbContext dbContext)
         {
             _dbContext = dbContext;
         }
-
-        public void DeleteText(Text text)
+        
+        public async Task<Text> CreateTextAsync (Text text)
         {
-            _dbContext.Remove(text);
+            _dbContext.Add(text);
+            await _dbContext.SaveChangesAsync();
+
+            return text;
         }
 
-        public void Update(Text text)
+        public async Task<Text> GetTextAsync(int id)
         {
+            return await _dbContext.Texts.FirstOrDefaultAsync(t => t.TextId == id);
+        }
+
+        public async Task<List<Text>> GetTextAsync(List<int> idList)
+        {
+            var allTexts = _dbContext.Texts.Where(t => idList.Contains(t.TextId)).ToList();
+            return allTexts;
+        }
+        
+        public async Task DeleteTextAsync(int id)
+        {
+            _dbContext.Remove(_dbContext.Texts.FirstOrDefaultAsync(t => t.TextId == id));
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(UpdateTextModel updateModel)
+        {
+            var text = await _dbContext.Texts.FirstOrDefaultAsync(t => t.TextId == updateModel.Id);
+            if (updateModel.InfomationPart != null)
+            {
+                text.InfomationPart = updateModel.InfomationPart;
+            }
+            
+            if (updateModel.Mail != null)
+            {
+                text.Mail = updateModel.Mail;
+            }
+            
             _dbContext.Update(text);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<bool> ExistAsync(int id)
+        {
+            var text = await _dbContext.Texts.FirstOrDefaultAsync(t => t.TextId == id);
+            return text != null;
         }
     }
 }

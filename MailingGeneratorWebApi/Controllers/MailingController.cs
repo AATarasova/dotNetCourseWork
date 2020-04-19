@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Threading.Tasks;
+using MailingGeneratorBll.Addition;
 using MailingGeneratorDomain.RequestObjects;
-using MailingsGeneratorBll.Addition;
-using MailingsGeneratorDomain.Services;
+using MailingGeneratorDomain.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -24,13 +25,13 @@ namespace MailingGeneratorWebApi.Controllers
 
         [HttpPut]
         //public IActionResult AddWork([FromBody]int courseId, [FromBody]int workId, [FromBody]bool isFinishWork)
-        public IActionResult AddWork(int courseId, int workId, bool isFinishWork)
+        public async Task<IActionResult> AddWorkAsync(UpdateMailingModel updateModel)
         {
             try
             {
-                _service.AddWork(courseId, workId, isFinishWork);
+                await _service.UpdateAsync(updateModel);
             }
-            catch (ErrorTypes.NotExist er)
+            catch (ExceptionTypes.NotExistException er)
             {
                 return NotFound(er.StackTrace);
             }
@@ -42,13 +43,13 @@ namespace MailingGeneratorWebApi.Controllers
         }
         
         [HttpGet]
-        public IActionResult GetCourse (GetMailingObject get)
+        public async Task<IActionResult> GetCourseAsync (GetMailingModel getModel)
         {
             try
             {
-                return Ok(GetCourse(get));
+                return Ok(await GetCourseAsync(getModel));
             }
-            catch (ErrorTypes.NotExist er)
+            catch (ExceptionTypes.NotExistException er)
             {
                 return NotFound(er.StackTrace);
             }
@@ -59,11 +60,11 @@ namespace MailingGeneratorWebApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateMailing (MailingsGeneratorDomain.Models.Mailing mail)
+        public async Task<IActionResult> CreateMailingAsync (MailingsGeneratorDomain.Models.Mailing mail)
         {
             try
             {
-                return Created("https://localhost:5001/mailing", _service.CreateMailing(mail));
+                return Created("https://localhost:5001/mailing", await _service.CreateMailingAsync(mail));
             }
             catch (Exception er)
             {
@@ -72,14 +73,14 @@ namespace MailingGeneratorWebApi.Controllers
         }
 
         [HttpDelete]
-        public IActionResult DeleteMailing(int id)
+        public async Task<IActionResult> DeleteMailingAsync(int id)
         {
             try
             {
-                _service.DeleteMailing(id);
+                await _service.DeleteMailingAsync(id);
                 return NoContent();
             }
-            catch (ErrorTypes.MailingNotExist er)
+            catch (ExceptionTypes.MailingNotExistException er)
             {
                 return NotFound(er.StackTrace);
             }

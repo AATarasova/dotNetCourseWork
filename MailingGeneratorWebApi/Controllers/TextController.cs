@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Threading.Tasks;
+using MailingGeneratorBll.Addition;
 using MailingGeneratorDomain.Models;
+using MailingGeneratorDomain.RequestObjects;
 using MailingGeneratorDomain.Services;
-using MailingsGeneratorBll.Addition;
-using MailingsGeneratorDomain.Models;
-using MailingsGeneratorDomain.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -25,11 +25,11 @@ namespace MailingGeneratorWebApi.Controllers
 
 
         [HttpPost]
-        public IActionResult CreateText(Text text)
+        public async Task<IActionResult> CreateTextAsync(Text text)
         {
             try
             {
-                return Ok(_service.CreateText(text));
+                return Ok(await _service.CreateTextAsync(text));
             }
             catch (Exception er)
             {
@@ -38,14 +38,14 @@ namespace MailingGeneratorWebApi.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetText(int id)
+        public async Task<IActionResult> GetTextAsync(int id)
         {
             try
             {
-                var text = _service.GetText(id);
+                var text = await _service.GetTextAsync(id);
                 return Ok(text);
             }
-            catch (ErrorTypes.NotExist er)
+            catch (ExceptionTypes.NotExistException er)
             {
                 return NotFound(er.StackTrace);
             }
@@ -56,14 +56,14 @@ namespace MailingGeneratorWebApi.Controllers
         }
 
         [HttpPut]
-        public IActionResult UpdateText(int id, string text)
+        public async Task<IActionResult> UpdateTextAsync(UpdateTextModel updateModel)
         {
             try
             {
-                _service.Update(id, text);
+                await _service.UpdateAsync(updateModel);
                 return Ok("Обновлено.");
             }
-            catch (ErrorTypes.NotExist er)
+            catch (ExceptionTypes.NotExistException er)
             {
                 return NotFound(er.StackTrace);
             }
@@ -74,15 +74,15 @@ namespace MailingGeneratorWebApi.Controllers
         }
 
         [HttpDelete]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> DeleteAsync(int id)
         {
             try
             {
-                _service.DeleteText(id);
+                await _service.DeleteTextAsync(id);
                 return NoContent();
 
             }
-            catch (ErrorTypes.NotExist er)
+            catch (ExceptionTypes.NotExistException er)
             {
                 return NotFound(er.StackTrace);
             }

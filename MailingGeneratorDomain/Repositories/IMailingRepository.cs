@@ -1,20 +1,23 @@
-﻿﻿ namespace MailingGeneratorDomain.Repositories
+﻿﻿ using System.Threading.Tasks;
+  using MailingGeneratorDomain.RequestObjects;
+
+  namespace MailingGeneratorDomain.Repositories
 {
     public interface IMailingRepository
     {
-        MailingsGeneratorDomain.Models.Mailing CreateMailing( MailingsGeneratorDomain.Models.Mailing mail);
+        Task<MailingsGeneratorDomain.Models.Mailing> CreateMailingAsync( MailingsGeneratorDomain.Models.Mailing mail);
         
         // Получение id по названию курса:
-        MailingsGeneratorDomain.Models.Mailing GetCourse(int id);
-        
-        // Получение названия курса по id:
-        MailingsGeneratorDomain.Models.Mailing GetCourse(string name);
-        
+        Task<MailingsGeneratorDomain.Models.Mailing> GetCourseAsync(GetMailingModel getModel);
+
+        Task<MailingsGeneratorDomain.Models.Mailing> GetCourseAsync(int id);
         // Добавление работы в курс:
-        void Update(MailingsGeneratorDomain.Models.Mailing mailing);
+        Task UpdateAsync(UpdateMailingModel updateModel);
         
         // Удаление рассылки
-        void DeleteMailing(MailingsGeneratorDomain.Models.Mailing id);
+        Task DeleteMailingAsync(int id);
+        
+        Task<bool> ExistAsync(int id);
     }
     
 }

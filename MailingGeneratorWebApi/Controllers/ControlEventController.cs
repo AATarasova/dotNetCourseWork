@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Threading.Tasks;
+using MailingGeneratorBll.Addition;
 using MailingGeneratorDomain.Models;
 using MailingGeneratorDomain.RequestObjects;
-using MailingsGeneratorBll.Addition;
-using MailingsGeneratorDomain.Models;
-using MailingsGeneratorDomain.Services;
+using MailingGeneratorDomain.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -25,13 +25,13 @@ namespace MailingGeneratorWebApi.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetControlEvent(int id)
+        public async Task<IActionResult> GetControlEventAsync(int id)
         {
             try
             {
-                return Ok(_service.GetControlEvent(id));
+                return Ok(await _service.GetControlEventAsync(id));
             }
-            catch (ErrorTypes.NotExist er)
+            catch (ExceptionTypes.NotExistException er)
             {
                 return NotFound(er.StackTrace);
             }
@@ -42,11 +42,11 @@ namespace MailingGeneratorWebApi.Controllers
         }
         
         [HttpPost]
-        public IActionResult CreateControlEvent (ControlEvent controlEvent)
+        public async Task<IActionResult> CreateControlEvent (ControlEvent controlEvent)
         {
             try
             {
-                return Ok(_service.CreateControlEvent(controlEvent));
+                return Ok(await _service.CreateControlEventAsync(controlEvent));
             }
             catch (Exception er)
             {
@@ -55,14 +55,14 @@ namespace MailingGeneratorWebApi.Controllers
         }
 
         [HttpPut]
-        public IActionResult UpdateControlEvent(UpdateControlEventObject update)
+        public async Task<IActionResult> UpdateControlEvent(UpdateControlEventModel update)
         {
             try
             {
-                _service.UpdateControlEvent(update);
+                await _service.UpdateControlEventAsync(update);
                 return Ok("Обновлено.");
             }
-            catch (ErrorTypes.NotExist er)
+            catch (ExceptionTypes.NotExistException er)
             {
                 return NotFound(er.StackTrace);
             }
@@ -73,14 +73,14 @@ namespace MailingGeneratorWebApi.Controllers
         }
         
         [HttpDelete]
-        public IActionResult DeleteMailing(int id)
+        public async Task<IActionResult> DeleteMailing(int id)
         {
             try
             {
-                _service.Delete(id);
+                await _service.DeleteAsync(id);
                 return NoContent();
             }
-            catch (ErrorTypes.NotExist er)
+            catch (ExceptionTypes.NotExistException er)
             {
                 return NotFound(er.StackTrace);
             }

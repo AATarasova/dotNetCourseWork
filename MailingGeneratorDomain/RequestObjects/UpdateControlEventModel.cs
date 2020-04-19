@@ -1,6 +1,6 @@
 ﻿namespace MailingGeneratorDomain.RequestObjects
 {
-    public class UpdateControlEventObject
+    public class UpdateControlEventModel
     {
         public int    Id      { get; set; }
         public int?   MaxMark { get; set; }
