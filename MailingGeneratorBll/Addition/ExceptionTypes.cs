@@ -42,7 +42,7 @@ namespace MailingGeneratorBll.Addition
         
         public class IncorrectMarkException : Exception 
         {
-            public IncorrectMarkException() : base("Оценка не должна быть отрицательной!") { }
+            public IncorrectMarkException() : base("Оценка должна быть от 0 до 10!") { }
         }
         public class NullValueException : Exception
         {
