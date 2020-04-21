@@ -11,6 +11,28 @@ namespace MailingGeneratorDal.Repository
     {
         private MailingDbContext _dbContext;
         
+        // Anna
+        public async Task<bool> HasWorkByIdAsync(int mailingId, int workId)
+        {
+            var mailing = await GetCourseAsync(mailingId);
+            return mailing.Works.Any(work => work.ControlEventId == workId);
+        }    
+        
+        // Anna
+        public async Task<bool> HasTextByIdAsync(int mailingId, int textId)
+        {
+            var mailing = await GetCourseAsync(mailingId);
+            return mailing.MailText.Any(text => text.TextId == textId);
+        }
+
+        // Anna
+        public async Task<int> GetCommonNumberOfControlEventsAsync(int mailingId)
+        {
+            var mailing = await GetCourseAsync(mailingId);
+            return (mailing.FinishWork == null) ? mailing.Works.Count : mailing.Works.Count + 1;
+        }
+
+
         // Создание рассылки
         public async Task<MailingsGeneratorDomain.Models.Mailing> CreateMailingAsync(
             MailingsGeneratorDomain.Models.Mailing mail)
@@ -94,6 +116,7 @@ namespace MailingGeneratorDal.Repository
         {
             _dbContext = dbContext;
         }
+
 
     }
 
