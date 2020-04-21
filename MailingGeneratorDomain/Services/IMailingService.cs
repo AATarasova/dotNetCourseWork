@@ -6,6 +6,13 @@ namespace MailingGeneratorDomain.Services
 {
     public interface IMailingService
     {
+
+        Task<bool> HasWorkByIdAsync(int mailingId, int workId);
+
+        Task<bool> HasTextByIdAsync(int mailingId, int textId);
+
+        Task<int> GetCommonNumberOfControlEventsAsync(int mailingId);
+        
         Task<Mailing> CreateMailingAsync(Mailing mail);
         
  
