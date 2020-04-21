@@ -5,6 +5,10 @@
 {
     public interface IMailingRepository
     {
+        Task<bool> HasWorkByIdAsync(int mailingId, int workId);
+        Task<bool> HasTextByIdAsync(int mailingId, int textId);
+        Task<int> GetCommonNumberOfControlEventsAsync(int mailingId);
+        
         Task<MailingsGeneratorDomain.Models.Mailing> CreateMailingAsync( MailingsGeneratorDomain.Models.Mailing mail);
         
         // Получение id по названию курса:
