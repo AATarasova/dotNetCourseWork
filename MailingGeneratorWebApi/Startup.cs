@@ -7,7 +7,6 @@ using MailingGeneratorBll.Services;
 using MailingGeneratorDal.Repository;
 using MailingGeneratorDomain.Repositories;
 using MailingGeneratorDomain.Services;
-using MailingsGeneratorBll.Services;
 using MailingsGeneratorDal.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

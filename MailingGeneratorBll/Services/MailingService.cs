@@ -1,14 +1,13 @@
-﻿﻿using System;
- using System.Collections.Generic;
- using System.Threading.Tasks;
- using MailingGeneratorBll.Addition;
- using MailingGeneratorDomain.Models;
- using MailingGeneratorDomain.Repositories;
- using MailingGeneratorDomain.RequestObjects;
- using MailingGeneratorDomain.Services;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using MailingGeneratorBll.Addition;
+using MailingGeneratorDomain.Models;
+using MailingGeneratorDomain.Repositories;
+using MailingGeneratorDomain.RequestObjects;
+using MailingGeneratorDomain.Services;
 
-
- namespace MailingsGeneratorBll.Services
+namespace MailingGeneratorBll.Services
 {
     public class MailingService : IMailingService
     {
@@ -16,7 +15,65 @@
         private IControlEventRepository _eventRepository;
         private ITextRepository _textRepository;
 
-        // Создание рассылки
+        // Olga, Add:
+        public async Task<bool> HasWorkByIdAsync(int mailingId, int workId)
+        {
+            if (mailingId < 1 || workId < 1)
+            {
+                throw new ExceptionTypes.IncorrectIdException();
+            }
+
+            if (!await _repository.ExistAsync(mailingId))
+            {
+                throw new ExceptionTypes.MailingNotExistException();
+            }
+
+            if (!await _eventRepository.ExistAsync(workId))
+            {
+                throw new ExceptionTypes.ControlEventNotExistException();
+            }
+
+            return await _repository.HasWorkByIdAsync(mailingId, workId);
+        }        
+        
+        // Olga, Add:
+        public async Task<bool> HasTextByIdAsync(int mailingId, int textId)
+        {
+            if (mailingId < 1 || textId < 1)
+            {
+                throw new ExceptionTypes.IncorrectIdException();
+            }
+
+            if (!await _repository.ExistAsync(mailingId))
+            {
+                throw new ExceptionTypes.MailingNotExistException();
+            }
+
+            if (!await _textRepository.ExistAsync(textId))
+            {
+                throw new ExceptionTypes.TextNotExistException();
+            }
+
+            return await _repository.HasTextByIdAsync(mailingId, textId);
+        }
+        
+        // Olga, Add:
+
+        public async Task<int> GetCommonNumberOfControlEventsAsync(int mailingId)
+        {
+            if (mailingId < 1)
+            {
+                throw new ExceptionTypes.IncorrectIdException();
+            }
+
+            if (!await _repository.ExistAsync(mailingId))
+            {
+                throw new ExceptionTypes.MailingNotExistException();
+            }
+            
+            return await _repository.GetCommonNumberOfControlEventsAsync(mailingId);
+        }
+        // Olga, Change:
         public async Task<MailingsGeneratorDomain.Models.Mailing> CreateMailingAsync(
             MailingsGeneratorDomain.Models.Mailing mail)
         {
@@ -31,17 +88,24 @@
 
             CheckDate(mail.StartDate);
 
+            if (mail.TextId != null)
+            {
+                GetElements<Text> getTexts = _textRepository.GetTextsAsyncById;
+                await AddElement(mail.MailText, mail.TextId, getTexts, new ExceptionTypes.TextNotExistException());
+            }
+            
             if (mail.WorksId != null)
             {
-                mail.Works = new List<ControlEvent>();
-                foreach (var workId in mail.WorksId)
+                GetElements<ControlEvent> getElements = _eventRepository.GetControlEventsAsyncById;
+                await AddElement(mail.Works, mail.WorksId, getElements, new ExceptionTypes.ControlEventNotExistException());
+                foreach (var work in mail.Works)
                 {
-                    var work = await _eventRepository.GetControlEventAsync(workId);
-                    if (work == null)
+                    var text = await _textRepository.CreateTextAsync(new Text()
                     {
-                        throw new ExceptionTypes.ControlEventNotExistException();
-                    }
-                    mail.Works.Add(work);
+                        RememberAboutDeadline = "Контрольное мероприятие " + work.ControlEventId,
+                        InfomationPart =  "Дедлайн:  " + work.Date
+                    });
+                    mail.MailText.Add(text);
                 }
             }
 
@@ -52,26 +116,13 @@
                 {
                     throw new ExceptionTypes.ControlEventNotExistException();
                 }
+
                 mail.FinishWork = finishWork;
             }
-
-            if (mail.TextId != null)
-            {
-                foreach (var textId in mail.TextId)
-                {
-                    var text = await _textRepository.GetTextAsync(textId);
-                    if (text == null)
-                    {
-                        throw new ExceptionTypes.TextNotExistException();
-                    }
-                    mail.MailText.Add(text);
-                }
-            }
+            
             return await _repository.CreateMailingAsync(mail);
         }
-
-
-
+        
         public async Task<MailingsGeneratorDomain.Models.Mailing> GetCourseAsync(int id)
                  {
             if (id < 1)
@@ -87,6 +138,7 @@
         }
         
 
+        // Olga, change
         public async Task UpdateAsync(UpdateMailingModel updateModel)
         {
             if (updateModel == null)
@@ -105,17 +157,38 @@
                 throw new ExceptionTypes.MailingNotExistException();
             }
 
+            CheckDate(updateModel.StartDate);
 
             if (updateModel.TextId != null)
             {
-                GetElement<Text> getText = _textRepository.GetTextAsync;
-                await AddElement(updateModel.MailText, updateModel.TextId, getText);
+                GetElements<Text> getTexts = _textRepository.GetTextsAsyncById;
+                await AddElement(updateModel.MailText, updateModel.TextId, getTexts, new ExceptionTypes.TextNotExistException());
             }
             
             if (updateModel.WorksId != null)
             {
-                GetElement<ControlEvent> getText = _eventRepository.GetControlEventAsync;
-                await AddElement(updateModel.Works, updateModel.WorksId, getText);
+                GetElements<ControlEvent> getElements = _eventRepository.GetControlEventsAsyncById;
+                await AddElement(updateModel.Works, updateModel.WorksId, getElements, new ExceptionTypes.ControlEventNotExistException());
+                foreach (var work in updateModel.Works)
+                {
+                    var text = await _textRepository.CreateTextAsync(new Text()
+                    {
+                        RememberAboutDeadline = "Контрольное мероприятие " + work.ControlEventId,
+                        InfomationPart =  "Дедлайн:  " + work.Date
+                    });
+                    updateModel.MailText.Add(text);
+                }
+            }
+
+            if (updateModel.FinishId.HasValue)
+            {
+                var control = await _eventRepository.GetControlEventAsync(updateModel.FinishId.Value);
+                if (control == null)
+                {
+                    throw new ExceptionTypes.ControlEventNotExistException();
+                }
+
+                updateModel.FinishWork = control;
             }
             
             
@@ -143,6 +216,11 @@
             {
                 throw new ExceptionTypes.NullValueException();
             }
+
+            if (getMailingModel.Id.HasValue && getMailingModel.Id.Value < 1)
+            {
+                throw new ExceptionTypes.IncorrectIdException();
+            }
           
             return await _repository.GetCourseAsync(getMailingModel);
 
@@ -158,31 +236,34 @@
         }
 
         
-        private async Task AddElement<T>(ICollection<T> list, 
-            IReadOnlyCollection<int> idList, GetElement<T> getControlEvent)
+        private async Task AddElement<T>(List<T> list, 
+            List<int> idList, GetElements<T> getElements, Exception exception)
         {
+            
             if (idList != null)
             {
-                foreach (var id in idList)
+                var listOfData = await getElements(idList);
+                
+                if (listOfData.Count != idList.Count)
                 {
-                    var controlEvent = await getControlEvent(id);
-                    if (controlEvent == null)
-                    {
-                        throw new ExceptionTypes.TextNotExistException();
-                    }
-                    list.Add(controlEvent);
+                    throw exception;
+                }
+
+                foreach (var element in listOfData)
+                {
+                    list.Add(element);
                 }
             }
         }
 
-        private delegate Task<T> GetElement<T> (int id);
+        private delegate Task<List<T>> GetElements<T> (List<int> idList);
 
         public static void CheckDate(string date)
         {
             bool isCorrect;
             if (date == null)
             {
-                isCorrect = false;
+                isCorrect = true;
             }
             else
             {
